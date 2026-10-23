@@ -1,24 +1,40 @@
-PORT=98377
-CFLAGS = -DPORT=$(PORT) -g -Wall
+CC ?= cc
+PORT ?= 30000
+BUILD_DIR ?= build
+CPPFLAGS += -Iinclude -DPORT=$(PORT)
+CFLAGS ?= -g -Wall
+LDFLAGS ?=
+LDLIBS ?=
+
+CLIENT_OBJECTS = $(BUILD_DIR)/client.o $(BUILD_DIR)/ui.o $(BUILD_DIR)/socket.o
+SERVER_OBJECTS = $(BUILD_DIR)/server.o $(BUILD_DIR)/socket.o \
+	$(BUILD_DIR)/doubly_linked_list.o $(BUILD_DIR)/matchmaking.o \
+	$(BUILD_DIR)/pokemon.o $(BUILD_DIR)/game.o
+
+.PHONY: all clean client server play
+
 all: client server play
 
-%.o: %.c
-	gcc ${CFLAGS} -c $<
+client: $(BUILD_DIR)/client
 
-server.o: server.c socket.h server.h client_server.h
-	gcc ${CFLAGS} -c $<
+server: $(BUILD_DIR)/server
 
-client.o: client.c socket.h client_server.h
-	gcc ${CFLAGS} -c $<
+play: $(BUILD_DIR)/play
 
-client: client.o ui.o socket.o
-	gcc ${CFLAGS} -o client client.o ui.o socket.o -lncurses
+$(BUILD_DIR):
+	mkdir -p $@
 
-server: server.o socket.o doubly_linked_list.o matchmaking.o pokemon.o game.o
-	gcc ${CFLAGS} -o $@ $^
+$(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-play: play.o
-	gcc ${CFLAGS} -o $@ $^
+$(BUILD_DIR)/client: $(CLIENT_OBJECTS)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS) -lncurses
+
+$(BUILD_DIR)/server: $(SERVER_OBJECTS)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+$(BUILD_DIR)/play: $(BUILD_DIR)/play.o
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 clean:
-	rm *.o client server play
+	rm -rf $(BUILD_DIR)

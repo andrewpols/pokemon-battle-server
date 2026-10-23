@@ -36,7 +36,7 @@ int main() {
     exit(1);
   }
 
-  execl("./client", "client", host, username, NULL);
+  execl("./build/client", "client", host, username, NULL);
 
   perror("execl");
   return 1;
